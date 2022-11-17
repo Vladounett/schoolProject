@@ -1,12 +1,12 @@
+#include <SDL2/SDL.h>
+
 #ifndef STRUCT
 #define STRUCT
 
-struct sprite_s{
-    int x;
-    int y;
-    int w;
-    int h;
+struct ressources_s{
+    SDL_Texture* spriteJoueur;
+    SDL_Texture* sols[3];
 };
-typedef struct sprite_s sprite_t;
+typedef struct ressources_s ressources_t;
 
 #endif
