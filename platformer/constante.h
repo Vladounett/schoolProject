@@ -5,6 +5,6 @@
 
 #define PLAYER_JUMP 4
 
-#define GRAVITY 4
+#define GRAVITY 5
 
 #endif
