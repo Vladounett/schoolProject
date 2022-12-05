@@ -1,6 +1,7 @@
 #include "fonctions_fichiers.h"
-#include "fonctions_SDL.h"
+#include "fonctions_graphique.h"
 #include "fonctions_Str.h"
+#include "fonctions_physique.h"
 #include "stdio.h"
 #include "constante.h"
 #include "stdlib.h"
@@ -24,21 +25,22 @@ int main(int argc, char *argv[]){
     bool fini = false; bool collision = false;
     bool saut = false; bool collisionSol = false;
 
-    int tempSaut = 0;
+    int tempSaut = 0; int niveauCollision = 0;
+    int sens = 0; int sensIdle = 1;
 
     taille_fichier(completePath, &tailleY, &tailleX); //récupération de la taille du fichier
+
+    anim_t anim_joueur;
+    anim_joueur.frame = 0;
+    anim_joueur.tempsParFrame = 6;
+    anim_joueur.tempsEcoule = 0;
+    anim_joueur.nbFrames = 5;
 
     printf("tailleX/tailleY = %d/%d\n",tailleX,tailleY);
 
     SDL_Rect r_rect[tailleX][tailleY];
 
     for(int i = 0; i < tailleX; i++){ //Création d'une grille sur tout le rendu
-
-        r_rect[i][0].x = 32 * i;
-        r_rect[i][0].y = 0;
-        r_rect[i][0].h = 32;
-        r_rect[i][0].w = 32;
-
         for(int j = 0; j < tailleY; j++){
 
             r_rect[i][j].x = 32 * i;
@@ -52,17 +54,25 @@ int main(int argc, char *argv[]){
     SDL_Rect p_rect; //déclaration du rectangle du joueur
     p_rect.x = 32*2;
     p_rect.y = (tailleY*32)-64;
-    p_rect.w = 26;
-    p_rect.h = 28;
+    p_rect.w = 24;
+    p_rect.h = 26;
 
     SDL_Rect sol_Collision; //déclaration du rectangle qui sert à détecter le sol
-    sol_Collision.x = p_rect.x+5;
+    sol_Collision.x = p_rect.x+4;
     sol_Collision.y = p_rect.y+32;
     sol_Collision.h = 1;
-    sol_Collision.w = 20;
+    sol_Collision.w = 17;
+
+    SDL_Rect joueurMarche[5];
+
+    for(int i = 0; i < 6; i++){
+        joueurMarche[i].x = i*32;
+        joueurMarche[i].y = 0;
+        joueurMarche[i].h = 32;
+        joueurMarche[i].w = 32; 
+    }
 
     SDL_Rect overlap; //le rectangle qui stockera la collision entre deux rectangles
-    SDL_Rect overlapSol;
 
     SDL_Event events;
 
@@ -74,6 +84,7 @@ int main(int argc, char *argv[]){
     ressources_t ressources; //structure ressources avec les textures et sprites nécessaires
 
     ressources.spriteJoueur = charger_image("ressources/character/Standing.bmp", rendu);
+    ressources.spritesJoueurMarche = charger_image("ressources/character/walk.bmp", rendu);
     ressources.sols[0] = charger_image("ressources/textures/sky.bmp", rendu);
     ressources.sols[1] = charger_image("ressources/textures/bricks.bmp", rendu);
     ressources.sols[2] = charger_image("ressources/textures/blueBricks.bmp", rendu);
@@ -85,8 +96,12 @@ int main(int argc, char *argv[]){
 
         if(keyStates[SDL_SCANCODE_A]){
             p_rect.x -= PLAYER_SPEED;
+            sens = -1;
         } else if(keyStates[SDL_SCANCODE_D]){
             p_rect.x += PLAYER_SPEED;
+            sens = 1;
+        } else {
+            sens = 0;
         }
         if(keyStates[SDL_SCANCODE_SPACE] && !saut){
             tempSaut = 0;
@@ -100,17 +115,9 @@ int main(int argc, char *argv[]){
             p_rect.y += GRAVITY;
         }
 
-        sol_Collision.x = p_rect.x+2;
-        sol_Collision.y = p_rect.y+32;
+        mouvementCollisionSol(&p_rect, &sol_Collision);
 
         for(int i = 0; i < tailleX; i++){ //On regarde si le joueur est entré en collision avec le décor et on récupére la collision dans le rectangle "overlap"
-            if(SDL_HasIntersection(&p_rect, &r_rect[i][0]) && currentLevel[i][0] != '0'){
-                collision = true;
-                SDL_IntersectRect(&p_rect, &r_rect[i][0], &overlap);
-            }
-            if(SDL_HasIntersection(&sol_Collision, &r_rect[i][0]) && currentLevel[i][0] != '0'){
-                collisionSol = true;
-            }
             for(int j = 0; j < tailleY; j++){
                 if(SDL_HasIntersection(&p_rect, &r_rect[i][j]) && currentLevel[i][j] != '0'){
                     collision = true;
@@ -118,16 +125,16 @@ int main(int argc, char *argv[]){
                 }
                 if(SDL_HasIntersection(&sol_Collision, &r_rect[i][j]) && currentLevel[i][j] != '0'){
                     collisionSol = true;
-                    SDL_IntersectRect(&sol_Collision, &r_rect[i][j], &overlapSol);
+                    niveauCollision = (j*32)-32;
                 }
             }
         }
 
         if(collisionSol){
-            p_rect.y -= GRAVITY;
+            p_rect.y = niveauCollision;
             collisionSol = false;
             saut = false;
-            sol_Collision.y = p_rect.y+32;
+            mouvementCollisionSol(&p_rect, &sol_Collision);
         }
 
         if(collision && overlap.x > p_rect.x){ //Si le joueur est entré en collision on l'enlève de la dite collision
@@ -135,13 +142,13 @@ int main(int argc, char *argv[]){
             collision = false;
             overlap.w = 0;
             overlap.h = 0;
-            sol_Collision.x = p_rect.x+2;
+            mouvementCollisionSol(&p_rect, &sol_Collision);
         }else if(collision && overlap.x <= p_rect.x){
             p_rect.x += PLAYER_SPEED;
             collision = false;
             overlap.w = 0;
             overlap.h = 0;
-            sol_Collision.x = p_rect.x+2;
+            mouvementCollisionSol(&p_rect, &sol_Collision);
         }
 
         SDL_PollEvent(&events);
@@ -159,15 +166,6 @@ int main(int argc, char *argv[]){
         SDL_RenderClear(rendu);
 
         for(int i = 0; i < tailleX; i++){  //Construction du niveau en fonction du tableau récupéré
-            switch(currentLevel[i][0]){
-                case '0':
-                SDL_RenderCopy(rendu, ressources.sols[0], NULL, &r_rect[i][0]); break;
-                case '1':
-                SDL_RenderCopy(rendu, ressources.sols[1], NULL, &r_rect[i][0]); break;
-                case '2':
-                SDL_RenderCopy(rendu, ressources.sols[2], NULL, &r_rect[i][0]); break;
-            }
-            //printf("i = %d \n",i);
             for(int j = 0; j < tailleY; j++){
                 switch(currentLevel[i][j]){
                     case '0':
@@ -181,20 +179,35 @@ int main(int argc, char *argv[]){
             }
         }
 
-        apply_texture(ressources.spriteJoueur, rendu, p_rect.x - 4, p_rect.y); //on applique la texture du joueur à la position du rectangle du joueur
 
-        SDL_RenderDrawRect(rendu, &sol_Collision);
+
+        switch(sens){ //on applique la texture du joueur à la position du rectangle du joueur
+            case 0:
+                anim_joueur.tempsEcoule = 0;
+                switch(sensIdle){
+                    case 1:
+                        apply_texture(ressources.spriteJoueur, rendu, p_rect.x - 4, p_rect.y); break;
+                    case -1:
+                        apply_texture_flip(ressources.spriteJoueur, rendu, p_rect.x - 4, p_rect.y); break;
+                }
+            break;
+            case 1:
+                apply_texture_via_rect(ressources.spritesJoueurMarche, rendu, joueurMarche[anim_joueur.frame], p_rect.x - 4, p_rect.y);
+                anim_joueur.tempsEcoule++;
+                sensIdle = 1;
+                break;
+            case -1:
+                apply_texture_via_rect_flip(ressources.spritesJoueurMarche, rendu, joueurMarche[anim_joueur.frame], p_rect.x - 4, p_rect.y);
+                anim_joueur.tempsEcoule++;
+                sensIdle = -1;
+                break;
+        }
+
+        handle_animation(&anim_joueur);
+
+        //SDL_RenderDrawRect(rendu, &sol_Collision);
         //SDL_RenderDrawRect(rendu, &p_rect);
         //SDL_RenderDrawRect(rendu, &overlapSol);
-
-        for(int i = 0; i < tailleX; i++){  //Construction du niveau en fonction du tableau récupéré
-            SDL_RenderDrawRect(rendu, &r_rect[i][0]);
-            //printf("i = %d \n",i);
-            for(int j = 0; j < tailleY; j++){
-                SDL_RenderDrawRect(rendu, &r_rect[i][j]);
-                //printf("i/j = %d/%d\n", i,j);
-            }
-        }
 
         SDL_RenderPresent(rendu);
 
