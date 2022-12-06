@@ -12,30 +12,38 @@
 
 
 
-int main(int argc, char *argv[]){
+int main(void){
 
     int tailleX = 0; int tailleY = 0;
 
+    int currentLevelName = 0;
+    
+    char* levelNames[2];
+    levelNames[0] = "niveau1.txt";
+    levelNames[1] = "niveau2.txt";
+
     char* path = "niveaux/"; //chemin vers le dossier
-    char* completePath = easyStrcat(path, argv[1]); //chemin vers le fichier entré en argument
+    char* completePath = easyStrcat(path, levelNames[currentLevelName]); //chemin vers le fichier du niveau
     char** currentLevel = lire_fichier(completePath); //lecture du niveau puis on le met dans un tableau
 
     const Uint8* keyStates;
 
     bool fini = false; bool collision = false;
     bool saut = false; bool collisionSol = false;
+    bool finNiveau = false;
 
     int tempSaut = 0; int niveauCollision = 0;
     int sens = 0; int sensIdle = 1;
 
     taille_fichier(completePath, &tailleY, &tailleX); //récupération de la taille du fichier
 
-    anim_t anim_joueur;
+    anim_t anim_joueur; //Déclaration de l'animation du joueur
     anim_joueur.frame = 0;
-    anim_joueur.tempsParFrame = 6;
+    anim_joueur.tempsParFrame = 10;
     anim_joueur.tempsEcoule = 0;
     anim_joueur.nbFrames = 5;
 
+    printf("%s \n",completePath);
     printf("tailleX/tailleY = %d/%d\n",tailleX,tailleY);
 
     SDL_Rect r_rect[tailleX][tailleY];
@@ -63,7 +71,7 @@ int main(int argc, char *argv[]){
     sol_Collision.h = 1;
     sol_Collision.w = 17;
 
-    SDL_Rect joueurMarche[5];
+    SDL_Rect joueurMarche[5]; //Rectangle de l'animation de marche du joueur
 
     for(int i = 0; i < 6; i++){
         joueurMarche[i].x = i*32;
@@ -88,9 +96,12 @@ int main(int argc, char *argv[]){
     ressources.sols[0] = charger_image("ressources/textures/sky.bmp", rendu);
     ressources.sols[1] = charger_image("ressources/textures/bricks.bmp", rendu);
     ressources.sols[2] = charger_image("ressources/textures/blueBricks.bmp", rendu);
+    ressources.sols[3] = charger_image("ressources/textures/exit.bmp", rendu);
 
 
     while(!fini){ //Boucle principal (on sort quand l'utilisateur appuie sur ECHAP ou clique sur la croix)
+
+        //On regarde les touches pressées
 
         keyStates = SDL_GetKeyboardState(NULL); //On récupére l'état actuel du clavier, et agit en conséquences (mouvement du personnage)
 
@@ -108,24 +119,32 @@ int main(int argc, char *argv[]){
             saut = true;
         }
 
-        if(saut && tempSaut < 20){
+        if(saut && tempSaut < PLAYER_JUMP_TIME){
             p_rect.y -= PLAYER_JUMP;
             tempSaut++;
         }else{
             p_rect.y += GRAVITY;
         }
 
-        mouvementCollisionSol(&p_rect, &sol_Collision);
+        mouvementCollisionSol(&p_rect, &sol_Collision); //On bouge le rectangle qui détecte la collision avec le sol, pour le mettre sous le joueur
+
+        //Collisions :
 
         for(int i = 0; i < tailleX; i++){ //On regarde si le joueur est entré en collision avec le décor et on récupére la collision dans le rectangle "overlap"
             for(int j = 0; j < tailleY; j++){
-                if(SDL_HasIntersection(&p_rect, &r_rect[i][j]) && currentLevel[i][j] != '0'){
+                if(SDL_HasIntersection(&p_rect, &r_rect[i][j]) && currentLevel[i][j] == '1'){
                     collision = true;
                     SDL_IntersectRect(&p_rect, &r_rect[i][0], &overlap);
                 }
-                if(SDL_HasIntersection(&sol_Collision, &r_rect[i][j]) && currentLevel[i][j] != '0'){
+                if(SDL_HasIntersection(&sol_Collision, &r_rect[i][j]) && currentLevel[i][j] == '1'){
                     collisionSol = true;
                     niveauCollision = (j*32)-32;
+                }
+                if(SDL_HasIntersection(&p_rect, &r_rect[i][j]) && currentLevel[i][j] == '3'){
+                    finNiveau = true;
+                }                
+                if(SDL_HasIntersection(&sol_Collision, &r_rect[i][j]) && currentLevel[i][j] == '3'){
+                    finNiveau = true;
                 }
             }
         }
@@ -151,17 +170,7 @@ int main(int argc, char *argv[]){
             mouvementCollisionSol(&p_rect, &sol_Collision);
         }
 
-        SDL_PollEvent(&events);
-
-        switch(events.type){ //On réagit en fonction des événements
-            case SDL_QUIT: //si on clique sur la croix on quitte
-            fini = true; break;
-            case SDL_KEYDOWN:
-            switch(events.key.keysym.sym){
-                case SDLK_ESCAPE: //si on appuie sur échap on quitte
-                fini = true; break;
-            }break;
-        }
+        //Rendu
 
         SDL_RenderClear(rendu);
 
@@ -174,6 +183,8 @@ int main(int argc, char *argv[]){
                     SDL_RenderCopy(rendu, ressources.sols[1], NULL, &r_rect[i][j]); break;
                     case '2':
                     SDL_RenderCopy(rendu, ressources.sols[2], NULL, &r_rect[i][j]); break;
+                    case '3':
+                    SDL_RenderCopy(rendu, ressources.sols[3], NULL, &r_rect[i][j]); break;
                 }
                 //printf("i/j = %d/%d\n", i,j);
             }
@@ -203,13 +214,41 @@ int main(int argc, char *argv[]){
                 break;
         }
 
-        handle_animation(&anim_joueur);
+        handle_animation(&anim_joueur); //On s'occupe de l'animation du joueur
 
         //SDL_RenderDrawRect(rendu, &sol_Collision);
         //SDL_RenderDrawRect(rendu, &p_rect);
         //SDL_RenderDrawRect(rendu, &overlapSol);
 
         SDL_RenderPresent(rendu);
+
+        //Evenements
+
+        SDL_PollEvent(&events);
+
+        switch(events.type){ //On réagit en fonction des événements
+            case SDL_QUIT: //si on clique sur la croix on quitte
+            fini = true; break;
+            case SDL_KEYDOWN:
+            switch(events.key.keysym.sym){
+                case SDLK_ESCAPE: //si on appuie sur échap on quitte
+                fini = true; break;
+            }break;
+        }
+
+        if(finNiveau){
+
+            currentLevelName++;
+
+            completePath = easyStrcat(path, levelNames[currentLevelName]); //chemin vers le fichier du niveau
+            printf("%s \n", completePath);
+            currentLevel = lire_fichier(completePath); //lecture du niveau puis on le met dans un tableau
+
+            p_rect.x = 32*2;
+            p_rect.y = (tailleY*32)-64;
+
+            finNiveau = false;
+        }
 
         SDL_Delay(10);
     }
