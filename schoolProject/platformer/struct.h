@@ -16,7 +16,7 @@ struct ressources_s{
     SDL_Texture* spritesJoueurMarche;
     SDL_Texture* spriteJoueurSaut;
     SDL_Texture* cle;
-    SDL_Texture* sols[3];
+    SDL_Texture* sols[4];
 };
 typedef struct ressources_s ressources_t;
 

@@ -120,8 +120,7 @@ char** modifier_caractere(char** tab, SDL_Rect* pickups, int* nbPickups, int n, 
                 pickups[compt].y = (j*32)+10;
                 pickups[compt].h = 10;
                 pickups[compt].w = 24;
-                compt++;
-                pickups = realloc(pickups, sizeof(SDL_Rect) * (compt+1));
+                compt += 1;
             }
         }    
     }

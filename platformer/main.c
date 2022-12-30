@@ -12,15 +12,14 @@
 
 int main(void)
 {
-    int tailleX = 0; //taille du tableau du niveau
+    int tailleX = 0;
     int tailleY = 0;
 
-    int currentLevelName = 0; //index du tableau des niveaux
+    int currentLevelName = 0;
 
-    char *levelNames[3]; //Tableau contenant les niveaux disponibles
+    char *levelNames[2];
     levelNames[0] = "niveau1.txt";
     levelNames[1] = "niveau2.txt";
-    levelNames[2] = "niveau3.txt";
 
     char *path = "niveaux/";                                             // chemin vers le dossier
     char *completePath = easyStrcat(path, levelNames[currentLevelName]); // chemin vers le fichier du niveau
@@ -28,15 +27,12 @@ int main(void)
 
     taille_fichier(completePath, &tailleY, &tailleX); // récupération de la taille du fichier
 
-    int nbCle = 0;
-    int comptCle = 0;
-
-    SDL_Rect* pickups = malloc(sizeof(SDL_Rect) * 3); //le max de clé dans un niveau étant 3
-    currentLevel = modifier_caractere(currentLevel, pickups, &nbCle, tailleX, tailleY, '4', ' ');
+    int nbPickups = 0;
+    SDL_Rect* pickups = malloc(sizeof(SDL_Rect));
+    currentLevel = modifier_caractere(currentLevel, pickups, &nbPickups, tailleX, tailleY, '4', ' ');
 
     const Uint8 *keyStates;
 
-    bool mort = false;
     bool fini = false;
     bool collision = false;
     bool saut = false;
@@ -132,28 +128,27 @@ int main(void)
                     collisionSol = true;
                     niveauCollision = (j * 32) - 32;
                 }
-                if (SDL_HasIntersection(&p_rect, &r_rect[i][j]) && currentLevel[i][j] == '3' && comptCle == nbCle)
+                if (SDL_HasIntersection(&p_rect, &r_rect[i][j]) && currentLevel[i][j] == '3')
                 {
                     finNiveau = true;
                 }
-                if (SDL_HasIntersection(&sol_Collision, &r_rect[i][j]) && currentLevel[i][j] == '3' && comptCle == nbCle)
+                if (SDL_HasIntersection(&sol_Collision, &r_rect[i][j]) && currentLevel[i][j] == '3')
                 {
                     finNiveau = true;
                 }
             }
         }
 
-        //Collisions avec les clés
-        for(int i = 0; i < nbCle; i++){
+        for(int i = 0; i < nbPickups; i++){
             if(SDL_HasIntersection(&p_rect, &pickups[i])){
+                printf("collision clé n°%d \n", i);
                 pickups[i].h = 0;
                 pickups[i].w = 0;
-                comptCle++;
+                pickups[i].x = 0;
+                pickups[i].y = 0;
             }
         }
 
-
-        //On regarde les collisions avec le sol, via le rectangle sous les pieds du joueur
         if (collisionSol)
         {
             p_rect.y = niveauCollision;
@@ -196,11 +191,7 @@ int main(void)
                     SDL_RenderCopy(rendu, ressources->sols[2], NULL, &r_rect[i][j]);
                     break;
                 case '3':
-                    if(comptCle >= nbCle){
-                        SDL_RenderCopy(rendu, ressources->sols[3], NULL, &r_rect[i][j]);
-                    }else{
-                        SDL_RenderCopy(rendu, ressources->sols[4], NULL, &r_rect[i][j]);
-                    }
+                    SDL_RenderCopy(rendu, ressources->sols[3], NULL, &r_rect[i][j]);
                     break;
                 default:
                     SDL_RenderCopy(rendu, ressources->sols[0], NULL, &r_rect[i][j]);
@@ -209,13 +200,12 @@ int main(void)
             }
         }
 
-        //On dessine les clés
-        for(int i = 0; i < nbCle; i++){
+        for(int i = 0; i < nbPickups; i++){
             SDL_RenderCopy(rendu, ressources->cle, NULL, &pickups[i]);
         }
 
         switch (sens)
-        { // on applique la texture du joueur à la position du rectangle du joueur dans le sens dujoueur
+        { // on applique la texture du joueur à la position du rectangle du joueur
         case 0:
             anim_joueur.tempsEcoule = 0;
             switch (sensIdle)
@@ -258,36 +248,7 @@ int main(void)
 
         handle_animation(&anim_joueur); // On s'occupe de l'animation du joueur
 
-        //On regarde si le joueur est tombé dans le vide
-
-        if(p_rect.y > tailleY * 32){
-            mort = true;
-        }
-
-        if(mort){
-
-            mort = false;
-
-            completePath = easyStrcat(path, levelNames[currentLevelName]); // chemin vers le fichier du niveau
-            printf("%s \n", completePath);
-            currentLevel = lire_fichier(completePath); // lecture du niveau puis on le met dans un tableau
-
-            nbCle = 0; //On remet à 0 le nb de clé dans le niveau et le nombre de clé récupérés
-            comptCle = 0;
-
-            currentLevel = modifier_caractere(currentLevel, pickups, &nbCle, tailleX, tailleY, '4', ' '); //On recharge les clés mise dans le niveau
-
-            apply_text(rendu, (tailleX / 2) * 32 - 100, (tailleY / 2) * 32, 200, 80, "YOU DIED");
-            SDL_RenderPresent(rendu);
-
-            SDL_Delay(2000);
-
-            p_rect.x = 32 * 2; //Remettre le joueur au début du niveau
-            p_rect.y = (tailleY * 32) - 64;
-
-        }
-
-        if (finNiveau) //Si on fini le niveau on charge le suivant (ou on fini le jeu)
+        if (finNiveau)
         {
 
             currentLevelName++;
@@ -296,12 +257,7 @@ int main(void)
             printf("%s \n", completePath);
             currentLevel = lire_fichier(completePath); // lecture du niveau puis on le met dans un tableau
 
-            nbCle = 0; //On remet à 0 le nb de clé dans le niveau et le nombre de clé récupérés
-            comptCle = 0;
-
-            currentLevel = modifier_caractere(currentLevel, pickups, &nbCle, tailleX, tailleY, '4', ' '); //On recharge les clés mise dans le niveau
-
-            p_rect.x = 32 * 2; //Remettre le joueur au début du niveau
+            p_rect.x = 32 * 2;
             p_rect.y = (tailleY * 32) - 64;
 
             finNiveau = false;
@@ -311,6 +267,8 @@ int main(void)
 
             SDL_Delay(2000);
         }
+
+        //SDL_RenderDrawRect(rendu, &sol_Collision);
 
         SDL_RenderPresent(rendu);
 
