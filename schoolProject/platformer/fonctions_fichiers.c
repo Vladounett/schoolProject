@@ -1,6 +1,4 @@
 #include "fonctions_fichiers.h"
-#include "stdio.h"
-#include "stdlib.h"
 
 //taille_fichier qui modifie nbLig et nbCol en fonction du nombre de lignes et de colonnes du fichier
 
@@ -18,7 +16,11 @@ void taille_fichier(const char* nomFichier, int* nbLig, int* nbCol){
 
         c = fgetc(fichier);
 
-        if(c == '\n'){
+        if(c == '\n' || c == '\r'){
+
+            if(maxCol < colones){
+                maxCol = colones;
+            }
 
             lignes++;
             colones = 0;
@@ -26,14 +28,10 @@ void taille_fichier(const char* nomFichier, int* nbLig, int* nbCol){
         } else {
             colones++;
         }
-
-        if(maxCol < colones){
-            maxCol = colones;
-        }
     }
 
     *nbLig = lignes;
-    *nbCol = maxCol-1;
+    *nbCol = maxCol;
 
     fclose(fichier); 
 }
@@ -67,10 +65,10 @@ char** lire_fichier(const char* nomFichier){
 
         if(c != EOF && c != '\n' && c != '\r'){
             tab[i][j] = c;
-            //printf("tab[%d][%d] = %c \n",i,j,tab[i][j]);
+            //printf("%c \n",tab[i][j]);
         }
 
-        if(c == '\n'){
+        if(c == '\n' || c == '\r'){
             j++;
             i = 0;
         } else {
@@ -110,18 +108,25 @@ void ecrire_fichier(const char* nomFichier, char** tab, int n, int m){
 
 //remplace certains char d'un tableau de char** par un autre char
 
-char** modifier_caractere(char** tab, int n, int m, char ancien, char nouveau){
+char** modifier_caractere(char** tab, SDL_Rect* pickups, int* nbPickups, int n, int m, char ancien, char nouveau){
+
+    int compt = 0;
 
     for(int i = 0; i < n; i++){
-        if(tab[i][0] == ancien){
-            tab[i][0] = nouveau;
-        }
         for(int j = 0; j < m; j++){
             if(tab[i][j] == ancien){
                 tab[i][j] = nouveau;
+                pickups[compt].x = i*32;
+                pickups[compt].y = (j*32)+10;
+                pickups[compt].h = 10;
+                pickups[compt].w = 24;
+                compt++;
+                pickups = realloc(pickups, sizeof(SDL_Rect) * (compt+1));
             }
-        }
+        }    
     }
 
+    *nbPickups = compt;
     return tab;
 }
+

@@ -2,8 +2,8 @@
 #include "stdio.h"
 #include "stdlib.h"
 #include "fonctions_Str.h"
-
-
+                         
+//fonction qui concaténe deux str
 char* easyStrcat(char* str1, char* str2){
 
     char* strReturn = malloc(sizeof(char) * strlen(str1) * strlen(str2) + 1);

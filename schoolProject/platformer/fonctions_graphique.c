@@ -68,3 +68,42 @@ void handle_animation(anim_t* a){
         }
     }
 }
+
+void init_anim(anim_t* a, int nbFrames, int tempsFrame){
+    a->frame = 0;
+    a->tempsParFrame = tempsFrame;
+    a->tempsEcoule = 0;
+    a->nbFrames = nbFrames;  
+}
+
+void apply_text(SDL_Renderer *renderer,int x, int y, int w, int h, const char *text){
+	
+    TTF_Font * font = TTF_OpenFont("ressources/font/font.ttf", 20);
+
+    if(font == NULL){
+        printf("%s \n", "FONT NULL !!");
+    }
+
+    SDL_Color color = {255, 255, 0, 255};
+    
+    SDL_Surface* surface = TTF_RenderText_Solid(font, text, color);
+     
+    SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+    SDL_Rect dstrect2 = {x, y, w, h};
+
+    SDL_RenderCopy(renderer, texture, NULL, &dstrect2);
+    
+    TTF_CloseFont(font);
+}
+
+void init_ressources(ressources_t* ressources, SDL_Renderer* rendu){
+    ressources->spriteJoueur = charger_image("ressources/character/Standing.bmp", rendu);
+    ressources->spritesJoueurMarche = charger_image("ressources/character/walk.bmp", rendu);
+    ressources->spriteJoueurSaut = charger_image("ressources/character/Jumping.bmp", rendu);
+    ressources->sols[0] = charger_image("ressources/textures/sky.bmp", rendu);
+    ressources->sols[1] = charger_image("ressources/textures/bricks.bmp", rendu);
+    ressources->sols[2] = charger_image("ressources/textures/blueBricks.bmp", rendu);
+    ressources->sols[3] = charger_image("ressources/textures/exit.bmp", rendu);
+    ressources->cle = charger_image("ressources/textures/key.bmp", rendu);
+}
