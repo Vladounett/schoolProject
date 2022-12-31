@@ -9,5 +9,6 @@ void taille_fichier(const char* nomFichier, int* nbLig, int* nbCol);
 char** lire_fichier(const char* nomFichier);
 void ecrire_fichier(const char* nomFichier, char** tab, int n, int m);
 char** modifier_caractere(char** tab, SDL_Rect* pickups, int* nbPickups, int n, int m, char ancien, char nouveau);
+void ecrirePseudo(char* ps);
 
 #endif

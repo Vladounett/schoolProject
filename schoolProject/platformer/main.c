@@ -12,12 +12,19 @@
 
 int main(void)
 {
+
+    char* pseudo = malloc(sizeof(char)*20); //Pseudo (max 20 charactères)
+
+    printf("Entrez votre pseudo (max 20 charactères) : \n");
+    scanf("%s", pseudo);
+
     int tailleX = 0; //taille du tableau du niveau
     int tailleY = 0;
 
     int currentLevelName = 0; //index du tableau des niveaux
+    int nbLevels = 3; //Nombre de levels
 
-    char *levelNames[3]; //Tableau contenant les niveaux disponibles
+    char *levelNames[nbLevels]; //Tableau contenant les niveaux disponibles
     levelNames[0] = "niveau1.txt";
     levelNames[1] = "niveau2.txt";
     levelNames[2] = "niveau3.txt";
@@ -76,7 +83,7 @@ int main(void)
 
     SDL_Rect p_rect; // déclaration du rectangle du joueur
     p_rect.x = 32 * 2;
-    p_rect.y = (tailleY * 32) - 64;
+    p_rect.y = (tailleY * 32) - 96;
     p_rect.w = 24;
     p_rect.h = 26;
 
@@ -140,6 +147,14 @@ int main(void)
                 {
                     finNiveau = true;
                 }
+                /*if (SDL_HasIntersection(&sol_Collision, &r_rect[i][j]) && currentLevel[i][j] == '5')
+                {
+                    mort = true;
+                }*/
+                if (SDL_HasIntersection(&p_rect, &r_rect[i][j]) && currentLevel[i][j] == '5')
+                {
+                    mort = true;
+                }
             }
         }
 
@@ -201,6 +216,9 @@ int main(void)
                     }else{
                         SDL_RenderCopy(rendu, ressources->sols[4], NULL, &r_rect[i][j]);
                     }
+                    break;
+                case '5':
+                    SDL_RenderCopy(rendu, ressources->sols[5], NULL, &r_rect[i][j]);
                     break;
                 default:
                     SDL_RenderCopy(rendu, ressources->sols[0], NULL, &r_rect[i][j]);
@@ -264,6 +282,7 @@ int main(void)
             mort = true;
         }
 
+        //si le joueur est mort on recharge le niveau
         if(mort){
 
             mort = false;
@@ -283,7 +302,7 @@ int main(void)
             SDL_Delay(2000);
 
             p_rect.x = 32 * 2; //Remettre le joueur au début du niveau
-            p_rect.y = (tailleY * 32) - 64;
+            p_rect.y = (tailleY * 32) - 96;
 
         }
 
@@ -292,24 +311,73 @@ int main(void)
 
             currentLevelName++;
 
-            completePath = easyStrcat(path, levelNames[currentLevelName]); // chemin vers le fichier du niveau
-            printf("%s \n", completePath);
-            currentLevel = lire_fichier(completePath); // lecture du niveau puis on le met dans un tableau
+            if(currentLevelName == nbLevels){
+                apply_text(rendu, (tailleX / 2) * 32 - 100, (tailleY / 2) * 32, 200, 80, "You won");
+                SDL_RenderPresent(rendu);
 
-            nbCle = 0; //On remet à 0 le nb de clé dans le niveau et le nombre de clé récupérés
-            comptCle = 0;
+                SDL_Delay(2000);
 
-            currentLevel = modifier_caractere(currentLevel, pickups, &nbCle, tailleX, tailleY, '4', ' '); //On recharge les clés mise dans le niveau
+                apply_text(rendu, (tailleX / 2) * 32 - 100, (tailleY / 2) * 28, 200, 80, "Restart"); 
+                apply_text(rendu, (tailleX / 2) * 32 - 100, (tailleY / 2) * 38, 200, 80, "Quit");
+                SDL_RenderPresent(rendu);
 
-            p_rect.x = 32 * 2; //Remettre le joueur au début du niveau
-            p_rect.y = (tailleY * 32) - 64;
+                bool clique = false;
+                SDL_Event cliqueEvents;
 
-            finNiveau = false;
+                while(!clique){ //On ouvre le menu pour savoir si le joueur veut quitter ou recommencer
+                    SDL_WaitEvent(&cliqueEvents);
 
-            apply_text(rendu, (tailleX / 2) * 32 - 100, (tailleY / 2) * 32, 200, 80, "NEXT LEVEL");
-            SDL_RenderPresent(rendu);
+                    switch(cliqueEvents.type){
+                        case SDL_MOUSEBUTTONDOWN:
+                            case SDL_BUTTON_LEFT:
+                            if(cliqueEvents.button.x < ((tailleX / 2) * 32 - 100) + 200 && cliqueEvents.button.x > (tailleX / 2) * 32 - 100){
+                                if(cliqueEvents.button.y < ((tailleY / 2) * 38) + 80 && cliqueEvents.button.y > (tailleY / 2) * 38){
+                                    fini = true;
+                                    clique = true;
+                                }
+                                if(cliqueEvents.button.y < ((tailleY / 2) * 28) + 80 && cliqueEvents.button.y > (tailleY / 2) * 28){
+                                    clique = true;
+                                    currentLevelName = 0;
 
-            SDL_Delay(2000);
+                                    completePath = easyStrcat(path, levelNames[currentLevelName]); // chemin vers le fichier du niveau
+                                    printf("%s \n", completePath);
+                                    currentLevel = lire_fichier(completePath); // lecture du niveau puis on le met dans un tableau
+
+                                    nbCle = 0; //On remet à 0 le nb de clé dans le niveau et le nombre de clé récupérés
+                                    comptCle = 0;
+
+                                    currentLevel = modifier_caractere(currentLevel, pickups, &nbCle, tailleX, tailleY, '4', ' '); //On recharge les clés mise dans le niveau
+
+                                    p_rect.x = 32 * 2; //Remettre le joueur au début du niveau
+                                    p_rect.y = (tailleY * 32) - 96;
+
+                                    finNiveau = false;
+                                }
+                            }
+                        break;
+                    }
+                SDL_Delay(10);
+                }
+            }else{
+                completePath = easyStrcat(path, levelNames[currentLevelName]); // chemin vers le fichier du niveau
+                printf("%s \n", completePath);
+                currentLevel = lire_fichier(completePath); // lecture du niveau puis on le met dans un tableau
+
+                nbCle = 0; //On remet à 0 le nb de clé dans le niveau et le nombre de clé récupérés
+                comptCle = 0;
+
+                currentLevel = modifier_caractere(currentLevel, pickups, &nbCle, tailleX, tailleY, '4', ' '); //On recharge les clés mise dans le niveau
+
+                p_rect.x = 32 * 2; //Remettre le joueur au début du niveau
+                p_rect.y = (tailleY * 32) - 96;
+
+                finNiveau = false;
+
+                apply_text(rendu, (tailleX / 2) * 32 - 100, (tailleY / 2) * 32, 200, 80, "NEXT LEVEL");
+                SDL_RenderPresent(rendu);
+
+                SDL_Delay(2000);
+            }
         }
 
         SDL_RenderPresent(rendu);
@@ -336,7 +404,13 @@ int main(void)
         SDL_Delay(10);
     }
 
-    SDL_DestroyRenderer(rendu); // On quitte proprement
+    ecrirePseudo(pseudo);
+
+    free(pseudo);
+    free(pickups); //On quitte proprement
+    free(ressources);
+    free(r_rect);
+    SDL_DestroyRenderer(rendu);
     SDL_DestroyWindow(fenetre);
     TTF_Quit();
     SDL_Quit();

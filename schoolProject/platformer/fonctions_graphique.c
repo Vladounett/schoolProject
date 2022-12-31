@@ -106,5 +106,6 @@ void init_ressources(ressources_t* ressources, SDL_Renderer* rendu){
     ressources->sols[2] = charger_image("ressources/textures/blueBricks.bmp", rendu);
     ressources->sols[3] = charger_image("ressources/textures/exit.bmp", rendu);
     ressources->sols[4] = charger_image("ressources/textures/lockedExit.bmp", rendu);
+    ressources->sols[5] = charger_image("ressources/textures/spikes.bmp", rendu);
     ressources->cle = charger_image("ressources/textures/key.bmp", rendu);
 }

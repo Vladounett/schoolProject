@@ -116,11 +116,13 @@ char** modifier_caractere(char** tab, SDL_Rect* pickups, int* nbPickups, int n, 
         for(int j = 0; j < m; j++){
             if(tab[i][j] == ancien){
                 tab[i][j] = nouveau;
-                pickups[compt].x = i*32;
-                pickups[compt].y = (j*32)+10;
-                pickups[compt].h = 10;
-                pickups[compt].w = 24;
-                compt += 1;
+                if(compt < 3){
+                    pickups[compt].x = i*32;
+                    pickups[compt].y = (j*32)+10;
+                    pickups[compt].h = 10;
+                    pickups[compt].w = 24;
+                    compt += 1;                 
+                }
             }
         }    
     }
@@ -129,3 +131,13 @@ char** modifier_caractere(char** tab, SDL_Rect* pickups, int* nbPickups, int n, 
     return tab;
 }
 
+//Remercie le joueur en écrivant son pseudo dans un .txt
+
+void ecrirePseudo(char* ps){
+    FILE* f = fopen("pseudos/pseudos.txt", "a");
+
+    fputs(ps, f);
+    fputc('\n', f);
+
+    fclose(f);
+}
