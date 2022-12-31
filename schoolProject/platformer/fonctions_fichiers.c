@@ -136,6 +136,8 @@ char** modifier_caractere(char** tab, SDL_Rect* pickups, int* nbPickups, int n, 
 void ecrirePseudo(char* ps){
     FILE* f = fopen("pseudos/pseudos.txt", "a");
 
+    fputs("Merci", f);
+    fputc(' ', f);
     fputs(ps, f);
     fputc('\n', f);
 
