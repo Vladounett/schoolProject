@@ -106,7 +106,7 @@ void ecrire_fichier(const char* nomFichier, char** tab, int n, int m){
     fclose(fichier);
 }
 
-//remplace certains char d'un tableau de char** par un autre char
+//remplace certains char d'un tableau de char** par un autre char, tout en rajoutant l'endroit où les nouveaux chars on était placés (ici dans le cadre du jeu on limite à 3 car on ne veux pas plus de 3 clés)
 
 char** modifier_caractere(char** tab, SDL_Rect* pickups, int* nbPickups, int n, int m, char ancien, char nouveau){
 

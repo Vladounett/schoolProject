@@ -3,6 +3,8 @@
 #ifndef STRUCT
 #define STRUCT
 
+//struct d'une animation
+
 struct anim_s{
     int frame;
     int tempsParFrame;
@@ -10,6 +12,9 @@ struct anim_s{
     int nbFrames;
 };
 typedef struct anim_s anim_t;
+
+
+//struct des ressources du jeu
 
 struct ressources_s{
     SDL_Texture* spriteJoueur;
@@ -19,14 +24,5 @@ struct ressources_s{
     SDL_Texture* sols[5];
 };
 typedef struct ressources_s ressources_t;
-
-
-
-typedef struct Liste *liste; 
-struct Liste {
-  int premier ; 
-  liste suivant ;
-};
-
 
 #endif

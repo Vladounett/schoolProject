@@ -1,0 +1,21 @@
+Le jeu est un platformer classique on se déplace de gauche à droite et on saute
+
+- Q pour aller vers la gauche
+- D pour aller vers la droite
+- ESPACE pour sauter
+
+Il faut rester un peu de temps sur la sortie pour passer au prochain niveau
+
+il faut récupérer les clés visibles sur les niveaux pour débloquer la sortie
+
+le constructeur de niveau fonctionne de la sorte :
+
+- 1 := mur solide sur lequel on peu marcher
+- 2 := lave, qui nous tue si on rentre en contact avec
+- 3 := sortie, qui se débloque si on ramasse toutes les clés
+- 4 := les clés, au maximum de 3. Si il y en a plus que 3 les autres ne seront pas comptés
+- 5 := les piques, qui nous tue si on tombe dessus
+
+Il faut que les niveaux gardent la même taille maximum en x/y car la fenêtre du jeu prends la taille du premier niveau
+
+Le jeu vous demandera votre pseudo pour l'écrire dans un .txt à la fin du jeu. Le txt se trouve dans le dossier "pseudos"

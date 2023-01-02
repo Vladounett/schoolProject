@@ -13,6 +13,8 @@
 int main(void)
 {
 
+    bool tropPetit = false; //boolean qui retourne si le niveau est trop petit
+
     char* pseudo = malloc(sizeof(char)*20); //Pseudo (max 20 charactères)
 
     printf("Entrez votre pseudo (max 20 charactères) : \n");
@@ -35,11 +37,16 @@ int main(void)
 
     taille_fichier(completePath, &tailleY, &tailleX); // récupération de la taille du fichier
 
+    if(tailleY <= 3 || tailleX <= 3){ //on regarde si le niveau est un minimum grand
+        printf("Erreur taille de niveau trop petit \n");
+        tropPetit = true;
+    }
+
     int nbCle = 0;
     int comptCle = 0;
 
-    SDL_Rect* pickups = malloc(sizeof(SDL_Rect) * 3); //le max de clé dans un niveau étant 3
-    currentLevel = modifier_caractere(currentLevel, pickups, &nbCle, tailleX, tailleY, '4', ' ');
+    SDL_Rect* pickups = malloc(sizeof(SDL_Rect) * 3); //tableau contenant les clés dans un niveau, le max de clé dans un niveau étant 3 (et le min 0)
+    currentLevel = modifier_caractere(currentLevel, pickups, &nbCle, tailleX, tailleY, '4', ' '); //appel de la fonction qui va mettre les clés dans le tableau des clés
 
     const Uint8 *keyStates;
 
@@ -53,6 +60,7 @@ int main(void)
     int tempSaut = 0;
     int sens = 0;
     int sensIdle = 1;
+    int tempsSortie = 0;
 
     anim_t anim_joueur; // Déclaration de l'animation du joueur
     init_anim(&anim_joueur, 5, 10);
@@ -114,44 +122,45 @@ int main(void)
     ressources_t *ressources = malloc(sizeof(ressources_t)); // structure ressources avec les textures et sprites nécessaires
     init_ressources(ressources, rendu);
 
-    while (!fini)
-    { // Boucle principal (on sort quand l'utilisateur appuie sur ECHAP ou clique sur la croix)
+    while (!fini && !tropPetit)
+    { // Boucle principal
 
-        keyStates = SDL_GetKeyboardState(NULL);
+        //**----------------------------------------Mouvements--------------------------------------------------**
+
+        keyStates = SDL_GetKeyboardState(NULL); //On récupére l'état actuel du clavier (si une touche est pressée ou non)
 
         mouvements(keyStates, &p_rect, &sens, &tempSaut, &saut); //On bouge le personnage en fonction des touches pressées
 
         mouvementCollisionSol(p_rect, &sol_Collision); // On bouge le rectangle qui détecte la collision avec le sol, pour le mettre sous le joueur
 
-        //Collision
+        //**----------------------------------------Collisions--------------------------------------------------**
 
         for (int i = 0; i < tailleX; i++)
         { // On regarde si le joueur est entré en collision avec le décor et on récupére la collision dans le rectangle "overlap"
             for (int j = 0; j < tailleY; j++)
             {
-                if (SDL_HasIntersection(&p_rect, &r_rect[i][j]) && currentLevel[i][j] == '1')
+                if (SDL_HasIntersection(&p_rect, &r_rect[i][j]) && currentLevel[i][j] == '1') //contact avec les murs
                 {
                     collision = true;
                     SDL_IntersectRect(&p_rect, &r_rect[i][0], &overlap);
                 }
-                if (SDL_HasIntersection(&sol_Collision, &r_rect[i][j]) && currentLevel[i][j] == '1')
+                if (SDL_HasIntersection(&sol_Collision, &r_rect[i][j]) && currentLevel[i][j] == '1') //contact des pieds avec les murs
                 {
                     collisionSol = true;
                     niveauCollision = (j * 32) - 32;
                 }
-                if (SDL_HasIntersection(&p_rect, &r_rect[i][j]) && currentLevel[i][j] == '3' && comptCle == nbCle)
+                if (SDL_HasIntersection(&p_rect, &r_rect[i][j]) && currentLevel[i][j] == '3' && comptCle == nbCle) //contact sortie
                 {
-                    finNiveau = true;
+                    tempsSortie++;
+                    if(tempsSortie == TEMPS_FIN_NIVEAU){
+                        finNiveau = true;
+                    }
                 }
-                if (SDL_HasIntersection(&sol_Collision, &r_rect[i][j]) && currentLevel[i][j] == '3' && comptCle == nbCle)
-                {
-                    finNiveau = true;
-                }
-                /*if (SDL_HasIntersection(&sol_Collision, &r_rect[i][j]) && currentLevel[i][j] == '5')
+                if (SDL_HasIntersection(&p_rect, &r_rect[i][j]) && currentLevel[i][j] == '5') //contact avec des piques
                 {
                     mort = true;
-                }*/
-                if (SDL_HasIntersection(&p_rect, &r_rect[i][j]) && currentLevel[i][j] == '5')
+                }
+                if (SDL_HasIntersection(&p_rect, &r_rect[i][j]) && currentLevel[i][j] == '2') //contact avec les briques de laves
                 {
                     mort = true;
                 }
@@ -194,7 +203,7 @@ int main(void)
             mouvementCollisionSol(p_rect, &sol_Collision);
         }
 
-        // Rendu
+        //**----------------------------------------Rendu--------------------------------------------------**
 
         SDL_RenderClear(rendu);
 
@@ -233,7 +242,7 @@ int main(void)
         }
 
         switch (sens)
-        { // on applique la texture du joueur à la position du rectangle du joueur dans le sens dujoueur
+        { // on applique la texture du joueur à la position du rectangle du joueur dans le sens du joueur
         case 0:
             anim_joueur.tempsEcoule = 0;
             switch (sensIdle)
@@ -276,6 +285,8 @@ int main(void)
 
         handle_animation(&anim_joueur); // On s'occupe de l'animation du joueur
 
+        //**--------------------------------------Etats du jeu----------------------------------------------**
+
         //On regarde si le joueur est tombé dans le vide
 
         if(p_rect.y > tailleY * 32){
@@ -311,7 +322,7 @@ int main(void)
 
             currentLevelName++;
 
-            if(currentLevelName == nbLevels){
+            if(currentLevelName == nbLevels){ //On regarde si le nombre de niveaux fini correspond au nombre de niveaux dans le jeu pour savoir si le joueur à fini le jeu
                 apply_text(rendu, (tailleX / 2) * 32 - 100, (tailleY / 2) * 32, 200, 80, "You won");
                 SDL_RenderPresent(rendu);
 
@@ -319,6 +330,7 @@ int main(void)
 
                 apply_text(rendu, (tailleX / 2) * 32 - 100, (tailleY / 2) * 28, 200, 80, "Restart"); 
                 apply_text(rendu, (tailleX / 2) * 32 - 100, (tailleY / 2) * 38, 200, 80, "Quit");
+                apply_text(rendu, (tailleX / 2) * 32 - 100, (tailleY / 2) * 20, 200, 40, "Cliquez sur votre choix");
                 SDL_RenderPresent(rendu);
 
                 bool clique = false;
@@ -338,6 +350,8 @@ int main(void)
                                 if(cliqueEvents.button.y < ((tailleY / 2) * 28) + 80 && cliqueEvents.button.y > (tailleY / 2) * 28){
                                     clique = true;
                                     currentLevelName = 0;
+
+                                    tempsSortie = 0;
 
                                     completePath = easyStrcat(path, levelNames[currentLevelName]); // chemin vers le fichier du niveau
                                     printf("%s \n", completePath);
@@ -359,6 +373,9 @@ int main(void)
                 SDL_Delay(10);
                 }
             }else{
+
+                tempsSortie = 0;
+
                 completePath = easyStrcat(path, levelNames[currentLevelName]); // chemin vers le fichier du niveau
                 printf("%s \n", completePath);
                 currentLevel = lire_fichier(completePath); // lecture du niveau puis on le met dans un tableau
@@ -382,7 +399,7 @@ int main(void)
 
         SDL_RenderPresent(rendu);
 
-        // Evenements
+        //**------------------------------------------------------Evenements------------------------------------------------**
 
         SDL_PollEvent(&events);
 
@@ -406,8 +423,8 @@ int main(void)
 
     ecrirePseudo(pseudo);
 
-    free(pseudo);
-    free(pickups); //On quitte proprement
+    free(pseudo); //On quitte proprement
+    free(pickups);
     free(ressources);
     free(r_rect);
     SDL_DestroyRenderer(rendu);

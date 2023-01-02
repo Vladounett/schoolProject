@@ -1,5 +1,7 @@
 #include "fonctions_physique.h"
 
+//bouge le rectangle de collision avec le sol sous les pieds du joueur
+
 void mouvementCollisionSol(SDL_Rect p_rect, SDL_Rect *s_rect)
 {
     s_rect->x = p_rect.x + 4;
@@ -42,7 +44,7 @@ void mouvements(const Uint8 *keyStates, SDL_Rect *p_rect, int *sens, int *tempSa
     }
 }
 
-void handle_collisions(int tailleX, int tailleY, char** currentLevel, SDL_Rect* p_rect, SDL_Rect** r_rect, SDL_Rect sol_Collision, bool* collision, bool* collisionSol, bool* saut, bool* finNiveau)
+/*void handle_collisions(int tailleX, int tailleY, char** currentLevel, SDL_Rect* p_rect, SDL_Rect** r_rect, SDL_Rect sol_Collision, bool* collision, bool* collisionSol, bool* saut, bool* finNiveau)
 {
 
     //################################
@@ -103,4 +105,4 @@ void handle_collisions(int tailleX, int tailleY, char** currentLevel, SDL_Rect* 
         overlap.h = 0;
         mouvementCollisionSol(*p_rect, &sol_Collision);
     }    
-}
+}*/
